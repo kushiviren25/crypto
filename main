@@ -1,0 +1,150 @@
+import java.util.Scanner;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+public class Main {
+    public static void main(String[] args) {
+      Scanner sc = new Scanner(System.in);
+      User user = new User();
+      Authentication auth = new Authentication();
+      
+     // Step 1 : To let the user decide on the choice 
+      while(true) {
+    	  System.out.println("Welcome to the CryptoCurrency Tracker:)");
+    	  System.out.println("Let's get started !");
+    	  System.out.println("1.Register");
+    	  System.out.println("2.Login");
+    	  System.out.println("3.Exit");
+    	  
+    	  System.out.println("Enter your choice:");
+    	  int choice = sc.nextInt();
+    	  sc.nextLine();
+    	  String username = null , password ;
+    	  
+    	  switch(choice)
+    	  {
+    	  case 1 : System.out.println("Registration");
+    	          System.out.println("Enter the username:");
+    	          username = sc.nextLine();
+    	          System.out.println("Enter the password:");
+    	         password = sc.nextLine();
+    	         user.Register(username, password);
+    	                     break;
+    	          
+    	  case 2 : System.out.println("Authentication");
+                   System.out.println("Enter the username:");
+                    username = sc.nextLine();
+                   System.out.println("Enter the password:");
+                    password = sc.nextLine();
+                    if(user.login(username, password)) {
+                    	System.out.println("Login was successful !");
+                    	LoadPortfolio.Load(username);
+                    }
+                    break; 
+                           
+                           
+    	  case 3 : System.out.println("Exiting");
+    	           sc.close();
+    	           System.exit(0);
+    	  }
+      
+       
+      // Step 2 : Get the user to enter the input : 
+      HashMap<String , Double > crypto = new HashMap<>();
+      System.out.println("Type '$$' when you are done entering the currencies !");
+      
+      while(true) {
+    	  String input = sc.nextLine().trim();
+    	  if(input.equalsIgnoreCase("$$")) {
+    		  break ;
+    	  }
+    	  String[] parts = input.split("\\s+");
+    	  if(parts.length==2) {
+    		  try {
+    			  String cryptoid = parts[0].trim().toLowerCase();
+    			  String amountStr = parts[1].trim();
+    			  Double amount = Double.parseDouble(amountStr);
+    			  Double currentAmt = crypto.getOrDefault(cryptoid , 0.0);
+    			  Double updatedAmt = amount + currentAmt;
+    			  crypto.put(cryptoid, updatedAmt);
+    		  }catch(NumberFormatException e ) {
+    			  System.out.println("Invalid id entered !");
+    		  }
+    		  
+    		  
+    	  }else {
+    		  System.out.println("Invalid Input entered !");
+    	  }
+      }
+    	  // Step 3 : Fetch the data from API :
+    	  StringBuilder var = new  StringBuilder() ;
+    	  for(String id : crypto.keySet()) {
+    		  var.append(id).append(",");
+    	  }
+    	  if(var.length()>0) {
+    		  var.deleteCharAt(var.length()-1);
+    	  }
+    	  
+    	  String url = "https://api.coingecko.com/api/v3/simple/price?ids=" + var + "&vs_currencies=usd";
+
+    	  OkHttpClient client = new OkHttpClient();
+    	  Request request = new Request.Builder()
+    			  .url(url)
+    			  .build();
+    	  double totalValue = 0.0;
+    	  
+    	  try {
+    		  Response response = client.newCall(request).execute();
+    		  if(response.isSuccessful()) {
+    			  String responsebody = response.body().string();
+    			  JsonObject jsonobject = JsonParser.parseString(responsebody).getAsJsonObject();
+    			
+    			  for(Map.Entry<String,Double> entry : crypto.entrySet()) {
+    				  String cryptoid = entry.getKey();
+    				  Double amount  = entry.getValue();
+    			 
+    			  if(jsonobject.has(cryptoid)) {
+    				  
+    				  JsonObject data = jsonobject.getAsJsonObject(cryptoid);
+    				  Double price = data.get("usd").getAsDouble();
+    				  
+    				  Double cryptoValue = amount * price;
+    				  
+    				  System.out.printf("The CrytoCurrency enetred : %s\n",cryptoid);
+    				  System.out.printf("The Amount entered : %.2f\n",amount);
+    				  System.out.printf("The Market Price of the currency is : %.2f\n",price);
+    				  
+    				  totalValue = totalValue + cryptoValue;
+    			  }else {
+    				  System.out.println("Currency irrelevant ! Check Again!");
+    			  }
+    		  }
+    			  System.out.printf("The Total Value the Tracker holds is : %.2f\n",totalValue);
+    		  }else {
+    			  System.out.println("An error occured while fetching data ,Try Again"+response.code());
+    			  
+    		  }
+    	  }catch(IOException e) {
+    		  System.out.println("Invalid input was entered !"+e.getMessage());
+    	  }
+    	  
+    	  // Step 4 : Saving the portfolio : 
+    	  System.out.println("Do you want to save the details in your portfolio ? Type(Yes/No)");
+    	  String saver = sc.nextLine();
+    	
+    	  if(saver.equals("Yes")) {
+    		  SavePortfolio.portfolio(crypto, totalValue,username);
+    	  }else {
+    		  System.out.println("Your File was not saved !");
+    	  }
+      }   
+      }  
+      
+}
+
