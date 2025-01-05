@@ -1,0 +1,16 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+public class LoadPortfolio{
+	public static void Load(String username) {
+		String file = username + "portfolio.dat";
+		try(BufferedReader br = new BufferedReader(new FileReader(file))){
+			String line;
+			while((line = br.readLine())!=null) {
+				System.out.println(line);
+			}
+		}catch(IOException e ) {
+			System.out.println("Error occured while loading the portfolio "+e.getMessage());
+		}
+	}
+}
