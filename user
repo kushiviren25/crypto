@@ -1,0 +1,75 @@
+
+
+import java.io.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+
+public class User{
+	private HashMap <String,String> users ;
+	private static final String FILE_NAME = "users.dat";
+	
+	public User() {
+		users = new HashMap<>();
+		Loadusers();
+	}
+	
+	// Step 1 : Register the user 
+	public void Register(String username , String password) {
+		if(users.containsKey(username)) {
+			System.out.println("The username already exists.Check again");
+		}else {
+		String hashedPassword = hashPassword(password);
+		users.put(password, hashedPassword);
+		Saveusers();
+		System.out.println("User Successfully Registered !");
+	}
+	}
+	// Step 2 : Authenticate the user 
+	public boolean login(String username , String password) {
+		if(!users.containsKey(username)) {
+			System.out.println("Your username cannot be logged in , Register your username");
+			return false;
+		}
+		String hashedPassword = hashPassword(password);
+		if(users.get(username).equals(hashedPassword)) {
+			System.out.println("User login was Sucessful");
+			return true;
+		}else {
+			System.out.println("You entered the wrong password");
+			return false;
+		}
+	}
+	
+	public String hashPassword(String password) {
+		try {
+		MessageDigest md = MessageDigest.getInstance("SHA-256");
+		byte [] Byte = md.digest(password.getBytes());
+		StringBuilder sb = new StringBuilder();
+		for(byte hashb : Byte) {
+			sb.append(String.format("%02x", hashb));
+		}
+		return sb.toString();
+	}catch(NoSuchAlgorithmException e) {
+		throw new RuntimeException("An error occured !"+e.getMessage());
+	}
+	}
+
+	
+		// Step 3 : Save the Users 
+	public void Saveusers() {
+		try(ObjectOutputStream oos = new ObjectOutputStream (new FileOutputStream (FILE_NAME))){
+			oos.writeObject(users);
+		}catch(IOException e) {
+			System.out.println("Error in saving data "+e.getMessage());
+		}
+	}
+		// Step 4 : Load the users 
+	public void Loadusers() {
+		try(ObjectInputStream ois = new ObjectInputStream(new FileInputStream(FILE_NAME))){
+			users = (HashMap<String , String >) ois.readObject();
+		}catch(IOException  |ClassNotFoundException e) {
+			 users = new HashMap<>();
+		}
+	}
+}
