@@ -1,0 +1,65 @@
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.HashMap;
+import java.io.IOException;
+
+public class Authentication {
+	private static final String FILE_NAME = "users.dat";
+	HashMap<String,String> users;
+	
+	public Authentication() {
+		users = new HashMap<>();
+		Loadusers();
+	}
+	
+	// Step 1 : Register the user 
+	public void Register(String username , String password) {
+		if(users.containsKey(username)) {
+			System.out.println("This username already exists !");
+		}else {
+			users.put(username, password);
+			Saveusers();
+			System.out.println("User is successfully registered !");
+		}
+	}
+	
+	
+	// Step 2 : Login the existing user 
+	
+	public boolean Login(String username , String password) {
+		if(!users.containsKey(username)) {
+			System.out.println("This username does not exists");
+			return false;
+		}
+		if(users.get(password).equals(password)) {
+			System.out.println("User is successfully logged in !");
+			return true;
+		}else {
+			System.out.println("Wrong password was entered ! Try again");
+			return false;
+		}
+	}
+	
+	// Step 3 : Save users 
+	
+	public void Saveusers() {
+		try(ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("FILE_NAME"))){
+			oos.writeObject(users);
+		}catch(IOException e ) {
+			System.out.println("Error occured while trying to save the file "+e.getMessage());
+		}
+	}
+	
+	
+	public void Loadusers() {
+		try(ObjectInputStream ois = new ObjectInputStream(new FileInputStream("FILE_NAME"))){
+			users = (HashMap<String,String>) ois.readObject();
+		}catch(IOException | ClassNotFoundException e ) {
+			 users = new HashMap<>();
+		}
+	}
+	
+}
